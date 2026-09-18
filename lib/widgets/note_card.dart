@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:quick_notes/models/note.dart';
+import 'package:quick_notes/providers/note_provider.dart';
+import 'package:quick_notes/screens/edit_note_screen.dart';
+import 'package:quick_notes/screens/note_details.dart';
 
 class NoteCard extends StatelessWidget {
-  final NoteModel noteModel;
+  final NoteModel note;
 
-  const NoteCard({super.key, required this.noteModel});
+  const NoteCard({super.key, required this.note});
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +18,11 @@ class NoteCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(
+            builder: (_) => NoteDetails(noteId: note.noteID)));
+
+      },
       child: Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -24,7 +33,7 @@ class NoteCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      noteModel.noteTitle,
+                      note.noteTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyLarge,
@@ -32,12 +41,13 @@ class NoteCard extends StatelessWidget {
                   ),
                   PopupMenuButton<String>(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
-                    color: colors.primary,
+                    color: colors.primaryContainer,
                     onSelected: (value) {
                       if (value == "edit_note") {
-                        // Edit note
+                        Navigator.push(context, MaterialPageRoute(
+                            builder: (_)=> EditNoteScreen(note: note,)));
                       } else if (value == "delete_note") {
-                        // Delete note
+                        context.read<NoteProvider>().deleteNote(note.noteID);
                       }
                     },
                     itemBuilder: (context) => [
@@ -45,25 +55,27 @@ class NoteCard extends StatelessWidget {
                         value: 'edit_note',
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.edit_outlined,
-                              color: Color(0xFFF8FAFC),
+                              color: colors.onPrimaryContainer,
                             ),
                             const SizedBox(width: 5),
                             Text(
                               'Edit Note',
                               style: textTheme.bodyLarge?.copyWith(
                                 fontSize: 15,
+                                color: colors.onPrimaryContainer,
+                                fontWeight: FontWeight.w500
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const PopupMenuDivider(
-                        height: 1,
-                        color: Colors.white12,
-                        indent: 10,
-                        endIndent: 10,
+                       PopupMenuDivider(
+                        height: 2,
+                        color: colors.onPrimaryContainer,
+                        indent: 5,
+                        endIndent: 5,
                       ),
                       PopupMenuItem(
                         value: 'delete_note',
@@ -76,6 +88,7 @@ class NoteCard extends StatelessWidget {
                               style: textTheme.bodyLarge?.copyWith(
                                 color: colors.error,
                                 fontSize: 15,
+                                fontWeight: FontWeight.w500
                               ),
                             ),
                           ],
@@ -91,12 +104,12 @@ class NoteCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.2),
+                  color: colors.onPrimaryContainer.withValues(alpha: .5),
                   borderRadius: BorderRadius.circular(7),
                   border: Border.all(color: Colors.white12),
                 ),
                 child: Text(
-                  noteModel.content,
+                  note.content,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodyMedium,
@@ -105,15 +118,15 @@ class NoteCard extends StatelessWidget {
 
               const SizedBox(height: 6),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  "${noteModel.createdAt.year}/"
-                  "${noteModel.createdAt.month}/"
-                  "${noteModel.createdAt.day}",
-                  style: textTheme.bodySmall,
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.centerRight,
+              //   child: Text(
+              //     "${note.createdAt.year}/"
+              //     "${note.createdAt.month}/"
+              //     "${note.createdAt.day}",
+              //     style: textTheme.bodySmall,
+              //   ),
+              // ),
             ],
           ),
         ),
