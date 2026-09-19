@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:quick_notes/common/loading.dart';
 import 'package:quick_notes/common/text_field_decoration.dart';
 import 'package:quick_notes/models/note.dart';
 import 'package:quick_notes/providers/note_provider.dart';
@@ -19,11 +20,14 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   final titleController = TextEditingController();
   final idController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
+   String? errorMsg;
+  bool isLoading = false;
+  final Map <String, dynamic> updates = {};
   @override
   void initState(){
     super.initState();
     if(widget.note != null){
+
       bodyController.text = widget.note!.content;
       titleController.text = widget.note!.noteTitle;
     }
@@ -38,7 +42,9 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
+    final oldTitle = widget.note?.noteTitle;
+    final oldBody = widget.note?.content;
+    return isLoading ? Loading() : Scaffold(
       appBar: AppBar(
         title: Text(widget.note == null ? "Add Note" : "Edit Note"),
       ),
@@ -132,9 +138,12 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
                         },
                       ),
                       SizedBox(height: 10,),
-                      TextFormField(
-                        decoration: textFieldDecoration(context, hintText: "note id"),
-                        controller: idController,
+                      if(errorMsg != null)
+                      Text(
+                        errorMsg!,
+                        style: textTheme.bodyLarge!.copyWith(
+                          color: colors.error
+                        ),
                       ),
                       SizedBox(height: 28,),
                       SizedBox(
@@ -148,14 +157,50 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
                             backgroundColor: colors.primaryContainer,
                             foregroundColor: colors.onPrimaryContainer
                           ),
-                            onPressed: (){
+                            onPressed: () async{
                             if(_formKey.currentState!.validate()){
-                              context.read<NoteProvider>().addNote(NoteModel(
-
-                                  content: bodyController.text,
-                                  noteID: idController.text,
-                                  noteTitle: titleController.text));
-                              Navigator.pop(context);
+                              final title = titleController.text;
+                              final body = bodyController.text;
+                              setState(() {
+                                isLoading = true;
+                              });
+                              try {
+                                if (widget.note == null) {
+                                  await context.read<NoteProvider>().addNote(NoteModel(
+                                      content: body,
+                                      noteID: idController.text,
+                                      noteTitle: title));
+                                }
+                                else if(widget.note != null){
+                                  if(oldTitle != title){
+                                    updates['title'] = title;
+                                  }
+                                  if(oldBody != body){
+                                    updates['body'] = body;
+                                  }
+                                  await context.read<NoteProvider>().editNote(
+                                      widget.note!.noteID, updates);
+                                }
+                                if(context.mounted){
+                                  Navigator.pop(context);
+                                }
+                              } catch (e) {
+                              setState(() {
+                                if(widget.note == null){
+                                  errorMsg = "Couldn't create note";
+                                }
+                               else{
+                                 errorMsg = "Couldn't edit note";
+                                }
+                              });
+                              }
+                              finally{
+                                if (context.mounted) {
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                }
+                              }
                             }
                             },
                             label: Text(
