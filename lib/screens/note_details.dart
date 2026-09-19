@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quick_notes/models/note.dart';
 import 'package:quick_notes/providers/note_provider.dart';
 import 'package:quick_notes/screens/edit_note_screen.dart';
 
