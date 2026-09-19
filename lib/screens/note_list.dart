@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quick_notes/common/loading.dart';
-import 'package:quick_notes/models/note.dart';
 import 'package:quick_notes/providers/note_provider.dart';
 import 'package:quick_notes/screens/edit_note_screen.dart';
 import 'package:quick_notes/widgets/note_card.dart';
@@ -16,7 +15,13 @@ class _NoteListState extends State<NoteList> {
   @override
   void initState(){
     super.initState();
-    context.read<NoteProvider>().getNotes();
+    WidgetsBinding.instance.addPostFrameCallback((_){
+      // wait for the widget to be constructed before getNotes calls notify listeners and
+      // asks flutter ro rebuild our widget while its already being built,
+      // hence the name postFrameCallback.
+      context.read<NoteProvider>().getNotes();
+    });
+
   }
   @override
   Widget build(BuildContext context) {
