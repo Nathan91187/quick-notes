@@ -1,32 +1,44 @@
 import 'package:flutter/cupertino.dart';
-import 'package:provider/provider.dart';
 import 'package:quick_notes/models/note.dart';
 import 'package:quick_notes/services/note_service.dart';
 
 class NoteProvider extends ChangeNotifier{
   bool isLoading = false;
   String? errorMessage;
+  String? deletingNoteId;
   final NoteService noteService = NoteService();
    List<NoteModel> noteList = [
+
   ];
-  void deleteNote(String noteId){
-    noteList.removeWhere((note)=> note.noteID == noteId);
-    notifyListeners();
-  }
-  Future<void> addNote(NoteModel note)async{
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners();
+  Future<void> editNote(String noteID, Map<String , dynamic> updates)async{
     try{
-      NoteModel currNote = await noteService.createNote(note);
-      noteList.add(currNote);
-    }catch(e){
-      errorMessage = "Failed to add note";
-    }
-    finally{
-      isLoading = false;
+      final note = await noteService.editNote(noteID, updates);
+      final index = noteList.indexWhere((currNote)=> currNote.noteID == noteID);
+      if(index == -1){
+        throw Exception("note not found");
+      }
+      noteList[index] = note;
       notifyListeners();
     }
+    catch(e){
+      throw Exception("Couldn't edit note");
+    }
+  }
+  Future<void> deleteNote(String noteID) async{
+    deletingNoteId = noteID;
+    notifyListeners();
+      try {
+        await noteService.deleteNote(noteID);
+        noteList.removeWhere((note)=> note.noteID == noteID);
+      } finally {
+        deletingNoteId = null;
+        notifyListeners();
+      }
+  }
+  Future<void> addNote(NoteModel note)async{
+      NoteModel currNote = await noteService.createNote(note);
+      noteList.add(currNote);
+      notifyListeners();
   }
   Future<void> getNotes() async{
     isLoading = true;
@@ -43,7 +55,5 @@ class NoteProvider extends ChangeNotifier{
       notifyListeners();
     }
 
-    isLoading = false;
-    notifyListeners();
   }
 }
